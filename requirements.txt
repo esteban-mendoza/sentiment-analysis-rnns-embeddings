@@ -1,0 +1,6 @@
+torch
+torchvision
+requests
+jupyter
+ipython
+d2l
