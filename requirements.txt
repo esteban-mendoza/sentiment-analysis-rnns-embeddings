@@ -1,6 +1,5 @@
-torch
-torchvision
-requests
-jupyter
+torch==2.0.0 
+torchvision==0.15.1
+jupyterlab
 ipython
-d2l
+d2l==1.0.3
