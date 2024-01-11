@@ -1,0 +1,19 @@
+[0] Config.pm:307> INFO - This is Biber 2.19
+[0] Config.pm:310> INFO - Logfile is 'rnns-for-sentiment-analysis.blg'
+[51] biber-darwin:340> INFO - === Wed Dec 20, 2023, 13:39:10
+[68] Biber.pm:419> INFO - Reading 'rnns-for-sentiment-analysis.bcf'
+[154] Biber.pm:979> INFO - Found 9 citekeys in bib section 0
+[172] Biber.pm:4419> INFO - Processing section 0
+[180] Biber.pm:4610> INFO - Looking for bibtex file 'references.bib' for section 0
+[181] bibtex.pm:1713> INFO - LaTeX decoding ...
+[189] bibtex.pm:1519> INFO - Found BibTeX data source 'references.bib'
+[263] UCollate.pm:68> INFO - Overriding locale 'es-ES' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[263] UCollate.pm:68> INFO - Overriding locale 'es-ES' defaults 'variable = shifted' with 'variable = non-ignorable'
+[263] Biber.pm:4239> INFO - Sorting list 'apa/apasortcite//global/global' of type 'entry' with template 'apa' and locale 'es-ES'
+[281] UCollate.pm:68> INFO - Overriding locale 'es-ES' defaults 'normalization = NFD' with 'normalization = prenormalized'
+[281] UCollate.pm:68> INFO - Overriding locale 'es-ES' defaults 'variable = shifted' with 'variable = non-ignorable'
+[281] Biber.pm:4239> INFO - Sorting list 'apa/global//global/global' of type 'entry' with template 'apa' and locale 'es-ES'
+[293] bbl.pm:660> INFO - Writing 'rnns-for-sentiment-analysis.bbl' with encoding 'UTF-8'
+[305] bbl.pm:763> INFO - Output to rnns-for-sentiment-analysis.bbl
+[305] Biber.pm:131> WARN - legacy month field 'nov' in entry 'Hochreiter1997' is not an integer - this will probably not sort properly.
+[305] Biber.pm:133> INFO - WARNINGS: 1

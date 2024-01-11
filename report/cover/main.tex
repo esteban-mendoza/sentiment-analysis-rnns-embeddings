@@ -1,0 +1,133 @@
+\documentclass[letterpaper,12pt,oneside]{book}
+
+% Tipografiado y preferencias regionales
+\usepackage[utf8]{inputenc}
+\usepackage[spanish,es-nodecimaldot,es-noindentfirst,es-tabla]{babel}
+\usepackage[T1]{fontenc}
+\usepackage{mathptmx}
+\usepackage{csquotes,textcomp,microtype}
+\decimalpoint
+\unaccentedoperators
+
+% Formato
+\usepackage[top=1in, left=0.9in, right=1.25in, bottom=1in]{geometry}
+\usepackage{tocloft}
+\usepackage{booktabs}
+\usepackage{setspace}
+\usepackage{bachelorstitlepageUNAM}
+
+
+% Imágenes
+\usepackage{graphicx}
+\usepackage{tikz} 
+\graphicspath{{./figs/}}
+
+% Bibliografía
+%\usepackage[backend=biber, style=ieee]{biblatex}
+%\addbibresource{references.bib}
+
+% Matemáticas
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsthm}
+%\usepackage[libertine]{newtxmath}
+\usepackage{fouriernc}
+\allowdisplaybreaks
+
+\newtheorem{theorem}{Teorema}[chapter]
+\newtheorem{corollary}[theorem]{Corolario}
+\newtheorem{lemma}[theorem]{Lema}
+\newtheorem{proposition}[theorem]{Proposición}
+\newtheorem{notation}[theorem]{Notación}
+\newtheorem{definition}[theorem]{Definición}
+\newtheorem{example}{Ejemplo}[chapter]
+\newtheorem{remark}[theorem]{Observación}
+
+\renewcommand\cftsecpresnum{\S}
+\renewcommand\cftsubsecpresnum{\S}   
+\renewcommand{\bibname}{Referencias y bibliografía}
+\newcommand{\R}{\mathbb{R}}
+
+% Enlaces
+\usepackage[pdftex]{hyperref}
+\usepackage[spanish]{cleveref}
+
+\usepackage{lipsum}
+
+
+\begin{document}
+%------------------------------
+
+    \begin{titlepage}
+        \thispagestyle{empty}
+        \begin{minipage}[c][0.17\textheight][c]{0.25\textwidth}
+            \begin{center}
+                \includegraphics[width=3.5cm, height=3.5cm]{Escudo-UNAM.pdf}
+            \end{center}
+        \end{minipage}
+        \begin{minipage}[c][0.195\textheight][t]{0.75\textwidth}
+            \begin{center}
+                \vspace{0.3cm}
+                \textsc{\large Universidad Nacional Autónoma de México}\\[0.5cm]
+                \vspace{0.3cm}
+                \hrule height2.5pt
+                \vspace{.2cm}
+                \hrule height1pt
+                \vspace{.8cm}
+                \textsc{Facultad de Ciencias}\\[0.5cm] %
+            \end{center}
+        \end{minipage}
+
+        \begin{minipage}[c][0.81\textheight][t]{0.25\textwidth}
+            \vspace*{5mm}
+            \begin{center}
+                \hskip2.0mm
+                \vrule width1pt height13cm 
+                \vspace{5mm}
+                \hskip2pt
+                \vrule width2.5pt height13cm
+                \hskip2mm
+                \vrule width1pt height13cm \\
+                \vspace{5mm}
+                \includegraphics[height=4.0cm]{Escudo-FCIENCIAS.pdf}
+            \end{center}
+        \end{minipage}
+        \begin{minipage}[c][0.81\textheight][t]{0.75\textwidth}
+            \begin{center}
+                \vspace{1cm}
+
+                {\Large\scshape Hacia el análisis de sentimientos de tuits en español de México utilizando GRUs y \textit{GloVe}}\\[.2in]
+
+                \vspace{2cm}            
+
+                \textsc{\LARGE P\hspace{0.4cm}R\hspace{0.4cm}O\hspace{0.4cm}Y\hspace{0.4cm}E\hspace{0.4cm}C\hspace{0.4cm}T\hspace{0.4cm}O\hspace{0.6cm}II}\\[0.5cm]
+                \textsc{\large Presenta:}\\[0.5cm]
+                \textsc{\large {Jorge Esteban Mendoza Ortiz}}\\[2cm]          
+
+                \vspace{0.5cm}
+
+                {\large\scshape Tutores:\\[0.3cm] {M. en C. María Fernanda Sánchez Puig \\ 
+Sergio Miguel Fernández Martínez}}\\[.2in]
+
+                \vspace{0.5cm}
+
+                \large{Ciudad de México,}{ }{2022}
+            \end{center}
+        \end{minipage}
+    \end{titlepage}
+
+%---------------------------------
+\frontmatter
+\tableofcontents
+
+\mainmatter
+
+
+\section{Introducción}
+
+\backmatter%@sglvgdor
+
+
+
+\end{document}
