@@ -202,7 +202,7 @@ Matemáticamente, para un minilote de ejemplos $ \X_t \in \R^{n \times d} $ (con
 \begin{equation}
     \hi_t^{(l)} = \phi_t(\hi_t^{(l-1)}\we_{xh}^{(l)} + \hi_{t-1}^{(l)}\we_{hh}^{(l)} + \bi_h^{(l)}),
 \end{equation}
-donde $ \we_{xh}^{(l)} \in \R^{d\times h} $ y $ \we_{hh}^{(l)} \in \R^{h \times h} $ son parámetros de pesos y $ \bi_h^{(l)} \in \R^{1 \times h} $ es un vector de sesgo.
+donde los pesos $ \we_{xh}^{(l)} \in \R^{d\times h} $ y $ \we_{hh}^{(l)} \in \R^{h \times h} $ junto con el vector de sesgo $ \bi_h^{(l)} \in \R^{1 \times h} $ constituyen los parámetros de de la \textit{l}--ésima capa escondida.
 
 Después del cálculo de todas las capas escondidas, el cálculo de la capa de salida utiliza únicamente la información contenida en la $ L $--ésima capa escondida. Es decir:
 \begin{equation}
@@ -238,9 +238,9 @@ Después de hacer el cálculo de los estados escondidos hacia adelante y hacia a
 
 Para computar la salida de la red neuronal tenemos $ \out_t \in \R^{n \times q} $ (con $ q $ salidas):
 \begin{equation}
-    \out_t = \hi_t^{(L)}\we_{hq} + \bi_q,
+    \out_t = \hi_t^{(l)}\we_{hq} + \bi_q,
 \end{equation}
-donde $ \we_{hq} \in \R^{2h \times q} $ son los parámetros de pesos respectivos y el sesgo es $ \bi_q \in \R^{1 \times q} $.
+donde $ \we_{hq} \in \R^{2h \times q} $ son los parámetros de pesos respectivos y el sesgo es $ \bi_q \in \R^{1 \times q} $ para la \textit{l}--ésima capa, con $l \in \{1, 2, \ldots, L\}$.
 
 Es importante mencionar que el costo computacional de entrenar una RNN bidireccional es muy elevado, dado que la fase de propagación hacia adelante requiere hacer cálculos recursivos hacia adelante y hacia atrás en las capas bidireccionales, y que la retropropagación depende a su vez de las salidas de la propagación hacia adelante. Así, los gradientes tienen largas cadenas de dependencias.
 
@@ -357,7 +357,7 @@ Los autores de GloVe argumentan que utilizar las co--ocurrencias de palabra a pa
 
 Los autores de GloVe realizan tres cambios al modelo \textit{skip--gram} utilizando un modelo de regresión log--cuadrática:
 \begin{enumerate}
-    \item Usamos las variables $ p'_{ij} = x_{ij} $ y $ q'_{ij} = \exp(\co_j^{\top}\ce_{i}) $ que no son distribuciones de probabilidad, y toman el logaritmo de de ambas, así que el término de pérdida cuadrático es $ \left( \log p'_{ij} - \log q'_{ij}\right)^2 = \left( \co_j^{\top}\ce_i - \log x_{ij} \right)^2 $.
+    \item Usamos las variables $ p'_{ij} = x_{ij} $ y $ q'_{ij} = \exp(\co_j^{\top}\ce_{i}) $ que no son distribuciones de probabilidad, y toman el logaritmo de ambas, así que el término de pérdida cuadrático es $ \left( \log p'_{ij} - \log q'_{ij}\right)^2 = \left( \co_j^{\top}\ce_i - \log x_{ij} \right)^2 $.
     
     \item Agregan dos parámetros escalares al modelo para cada palabra $ w_i $: el sesgo de palabra central $ b_i $ y el sesgo de palabra contextual $ c_i $.
     
