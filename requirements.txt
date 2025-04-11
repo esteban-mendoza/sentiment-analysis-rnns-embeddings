@@ -7,3 +7,4 @@ ipython
 matplotlib
 pandas
 black
+scikit-learn
