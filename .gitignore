@@ -3,3 +3,13 @@
 data
 **/__pycache__
 **/runs
+
+# LaTeX
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.log
+*.out
+*.run.xml
+*.synctex.gz

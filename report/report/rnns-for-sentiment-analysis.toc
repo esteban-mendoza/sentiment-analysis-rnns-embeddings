@@ -1,0 +1,12 @@
+\babel@toc {spanish}{}\relax 
+\contentsline {section}{\numberline {1}Introducci^^c3^^b3n}{1}{section.1}%
+\contentsline {section}{\numberline {2}Marco Te^^c3^^b3rico}{1}{section.2}%
+\contentsline {subsection}{\numberline {2.1}\textit {Recurrent Neural Networks}}{2}{subsection.2.1}%
+\contentsline {subsubsection}{\numberline {2.1.1}\textit {Gated Recurrent Units}}{3}{subsubsection.2.1.1}%
+\contentsline {subsubsection}{\numberline {2.1.2}RNNs profundas}{6}{subsubsection.2.1.2}%
+\contentsline {subsubsection}{\numberline {2.1.3}RNNs bidireccionales}{7}{subsubsection.2.1.3}%
+\contentsline {subsubsection}{\numberline {2.1.4}Arquitecturas \textit {encoder}--\textit {decoder}}{8}{subsubsection.2.1.4}%
+\contentsline {subsection}{\numberline {2.2}\textit {Word embeddings}}{9}{subsection.2.2}%
+\contentsline {subsubsection}{\numberline {2.2.1}\texttt {word2vec} (\textit {skip--gram})}{9}{subsubsection.2.2.1}%
+\contentsline {subsubsection}{\numberline {2.2.2}\textit {GloVe}}{11}{subsubsection.2.2.2}%
+\contentsline {section}{\numberline {3}Arquitectura final}{12}{section.3}%
