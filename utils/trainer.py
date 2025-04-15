@@ -1,19 +1,14 @@
-import collections
 import datetime
 from contextlib import contextmanager
 
 import numpy as np
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torch.optim as optim
 from matplotlib import pyplot as plt
-from sklearn.metrics import confusion_matrix, f1_score, precision_score, recall_score
+from sklearn.metrics import f1_score
 from torch.utils.tensorboard import SummaryWriter
-from torchvision import datasets, transforms
 
 
-def train_epoch(model, train_loader, optimizer, loss_fn, device):
+def train_epoch(model, train_loader, optimizer, loss_fn, device, clipping=None):
     """Run one epoch of training.
 
     Args:
@@ -31,22 +26,48 @@ def train_epoch(model, train_loader, optimizer, loss_fn, device):
     correct_train = 0
     total_train = 0
 
-    for imgs, labels in train_loader:
-        imgs = imgs.to(device=device)
-        labels = labels.to(device=device)
+    for X, y in train_loader:
+        X = X.to(device=device)
+        y = y.to(device=device)
 
-        outputs = model(imgs)
-        loss = loss_fn(outputs, labels)
+        # Forward pass
+        outputs = model(X)
 
+        # Handle different output formats
+        if isinstance(outputs, tuple):
+            outputs = outputs[0]  # Get the main output if it's a tuple
+
+        # For sequence models, reshape if needed
+        if outputs.dim() > 2:
+            # If outputs is [batch, seq_len, vocab_size], transpose to [batch, vocab_size, seq_len]
+            # for CrossEntropyLoss which expects [N, C, d1, d2, ...]
+            outputs = (
+                outputs.transpose(1, 2)
+                if outputs.shape[1] != outputs.shape[2]
+                else outputs
+            )
+
+        loss = loss_fn(outputs, y)
+
+        # Backward and optimize
         optimizer.zero_grad()
         loss.backward()
+        if clipping:
+            torch.nn.utils.clip_grad_norm_(model.parameters(), clipping)
         optimizer.step()
 
         loss_train += loss.item()
 
-        _, predicted = torch.max(outputs, dim=1)
-        total_train += labels.shape[0]
-        correct_train += int((predicted == labels).sum())
+        # Calculate accuracy
+        if outputs.dim() <= 2:
+            # Standard classification
+            _, predicted = torch.max(outputs, dim=1)
+        else:
+            # For sequence prediction, get prediction at each position
+            _, predicted = torch.max(outputs, dim=1)
+
+        total_train += y.numel()  # Count all elements in y
+        correct_train += (predicted == y).sum().item()
 
     # Calculate training metrics
     train_loss = loss_train / len(train_loader)
@@ -108,25 +129,57 @@ def evaluate_model(model, val_loader, loss_fn, device, class_names=None):
     all_labels = []
 
     with torch.no_grad():
-        for imgs, labels in val_loader:
-            imgs = imgs.to(device=device)
-            labels = labels.to(device=device)
+        for X, y in val_loader:
+            X = X.to(device=device)
+            y = y.to(device=device)
 
-            outputs = model(imgs)
-            loss = loss_fn(outputs, labels)
+            # For sequence models, the output shape might be different
+            outputs = model(X)
+
+            # Handle different output formats
+            if isinstance(outputs, tuple):
+                outputs = outputs[0]  # Get the main output if it's a tuple
+
+            # For sequence models, reshape if needed
+            if outputs.dim() > 2:
+                # If outputs is [batch, seq_len, vocab_size], transpose to [batch, vocab_size, seq_len]
+                # for CrossEntropyLoss which expects [N, C, d1, d2, ...]
+                outputs = (
+                    outputs.transpose(1, 2)
+                    if outputs.shape[1] != outputs.shape[2]
+                    else outputs
+                )
+
+            loss = loss_fn(outputs, y)
             val_loss += loss.item()
 
-            _, predicted = torch.max(outputs, dim=1)
-            total_val += labels.shape[0]
-            correct_val += int((predicted == labels).sum())
+            # Get predictions
+            if outputs.dim() <= 2:
+                # Standard classification
+                _, predicted = torch.max(outputs, dim=1)
+            else:
+                # For sequence prediction, get prediction at each position
+                _, predicted = torch.max(outputs, dim=1)
 
-            all_preds.extend(predicted.cpu().numpy())
-            all_labels.extend(labels.cpu().numpy())
+            total_val += y.numel()  # Count all elements in y
+            correct_val += (predicted == y).sum().item()
+
+            # Flatten predictions and labels for metrics calculation
+            all_preds.extend(predicted.view(-1).cpu().numpy())
+            all_labels.extend(y.view(-1).cpu().numpy())
 
     # Calculate validation metrics
     val_loss = val_loss / len(val_loader)
     val_accuracy = correct_val / total_val
-    val_f1 = f1_score(all_labels, all_preds, average="weighted")
+
+    # Calculate F1 score if we have valid labels
+    unique_labels = np.unique(all_labels + all_preds)
+    val_f1 = f1_score(
+        all_labels,
+        all_preds,
+        average="weighted",
+        labels=unique_labels if len(unique_labels) > 1 else None,
+    )
 
     return {
         "loss": val_loss,
@@ -170,11 +223,16 @@ def log_model_info(writer, model, epoch, train_loader, device):
     """
     # Log model graph (only once)
     if epoch == 1:
-        example_images, _ = next(iter(train_loader))
         try:
-            writer.add_graph(model, example_images.to(device))
+            # Get a batch of data
+            example_inputs, _ = next(iter(train_loader))
+            example_inputs = example_inputs.to(device)
+
+            # Try to add the graph
+            writer.add_graph(model, example_inputs)
         except Exception as e:
             print(f"Failed to add model graph to TensorBoard: {e}")
+            print("Continuing without model graph visualization.")
 
     # Log histograms of model parameters
     for name, param in model.named_parameters():
@@ -184,55 +242,73 @@ def log_model_info(writer, model, epoch, train_loader, device):
 
 
 def log_predictions(
-    writer, model, val_loader, device, class_names, epoch, num_images=10
+    writer, model, val_loader, device, class_names, epoch, num_samples=5
 ):
-    """Log prediction visualizations to TensorBoard.
+    """Log prediction visualizations to TensorBoard for text data.
 
     Args:
         writer: TensorBoard SummaryWriter
         model: PyTorch model
         val_loader: Validation data loader
         device: Device to run on
-        class_names (list): List of class names
+        class_names (list): List of class names (vocabulary)
         epoch (int): Current epoch
-        num_images (int): Number of images to visualize
+        num_samples (int): Number of text samples to visualize
     """
     model.eval()
-    images_so_far = 0
-    fig = plt.figure(figsize=(15, 10))
+    samples_so_far = 0
+    prediction_text = ""
 
     with torch.no_grad():
-        for imgs, labels in val_loader:
-            imgs = imgs.to(device)
-            labels = labels.to(device)
-            outputs = model(imgs)
-            _, preds = torch.max(outputs, 1)
+        for X, y in val_loader:
+            if samples_so_far >= num_samples:
+                break
 
-            for j in range(imgs.size()[0]):
-                if images_so_far >= num_images:
+            X = X.to(device)
+            y = y.to(device)
+
+            # Get model outputs
+            outputs = model(X)
+
+            # Handle different output formats
+            if isinstance(outputs, tuple):
+                outputs = outputs[0]
+
+            # Get predictions
+            if outputs.dim() <= 2:
+                _, preds = torch.max(outputs, dim=1)
+            else:
+                _, preds = torch.max(outputs, dim=2)  # For sequence models
+
+            # For each sample in the batch
+            for j in range(min(X.size(0), num_samples - samples_so_far)):
+                # Convert input sequence to text
+                input_text = "Input: "
+                for idx in X[j].cpu().numpy():
+                    if idx < len(class_names):
+                        input_text += class_names[idx]
+
+                # Convert true labels to text
+                true_text = "True: "
+                for idx in y[j].cpu().numpy():
+                    if idx < len(class_names):
+                        true_text += class_names[idx]
+
+                # Convert predictions to text
+                pred_text = "Pred: "
+                for idx in preds[j].cpu().numpy():
+                    if idx < len(class_names):
+                        pred_text += class_names[idx]
+
+                # Add to overall prediction text
+                prediction_text += f"Sample {samples_so_far + 1}:\n{input_text}\n{true_text}\n{pred_text}\n\n"
+                samples_so_far += 1
+
+                if samples_so_far >= num_samples:
                     break
 
-                ax = plt.subplot(2, num_images // 2, images_so_far + 1)
-                ax.axis("off")
-                ax.set_title(
-                    f"pred: {class_names[preds[j]]}\ntrue: {class_names[labels[j]]}",
-                    color=("green" if preds[j] == labels[j] else "red"),
-                )
-
-                # Denormalize and convert to numpy for matplotlib
-                img = imgs[j].cpu().numpy().transpose((1, 2, 0))
-                mean = np.array([0.4915, 0.4823, 0.4468])
-                std = np.array([0.2470, 0.2435, 0.2616])
-                img = std * img + mean
-                img = np.clip(img, 0, 1)
-
-                plt.imshow(img)
-                images_so_far += 1
-                if images_so_far >= num_images:
-                    break
-
-    writer.add_figure(f"Predictions/Epoch_{epoch}", fig, epoch)
-    plt.close(fig)
+    # Log the text predictions
+    writer.add_text(f"Predictions/Epoch_{epoch}", prediction_text, epoch)
 
 
 def log_embeddings(writer, model, val_loader, device, class_names, n_epochs):
@@ -246,41 +322,56 @@ def log_embeddings(writer, model, val_loader, device, class_names, n_epochs):
         class_names (list): List of class names
         n_epochs (int): Total number of epochs
     """
-    features = []
-    labels_list = []
-
-    # Get features from the last layer before classification
-    def hook_fn(module, input, output):
-        features.append(input[0].cpu().numpy())
-
-    # Register hook to the second-to-last layer
+    # For RNN models, we'll skip embedding visualization or implement a custom approach
     try:
-        handle = model.fc1.register_forward_hook(hook_fn)
+        # Collect some input data
+        all_inputs = []
+        all_labels = []
 
-        with torch.no_grad():
-            for imgs, labels in val_loader:
-                imgs = imgs.to(device)
-                model(imgs)
-                labels_list.extend(labels.numpy())
+        # Limit the number of samples for visualization
+        max_samples = 1000
+        samples_collected = 0
 
-        handle.remove()
+        for X, y in val_loader:
+            if samples_collected >= max_samples:
+                break
 
-        # Concatenate all features
-        features = np.concatenate(features)
+            batch_size = X.size(0)
+            if samples_collected + batch_size > max_samples:
+                # Take only what we need to reach max_samples
+                X = X[: max_samples - samples_collected]
+                y = y[: max_samples - samples_collected]
 
-        # Select a subset of data for visualization (max 10000 points)
-        max_samples = min(10000, len(features))
-        indices = np.random.choice(len(features), max_samples, replace=False)
+            all_inputs.append(X)
+            all_labels.append(y)
+            samples_collected += X.size(0)
 
-        # Log embeddings
-        writer.add_embedding(
-            features[indices],
-            metadata=[class_names[l] for l in np.array(labels_list)[indices]],
-            label_img=None,
-            global_step=n_epochs,
-        )
+        if all_inputs:
+            # Concatenate all collected data
+            all_inputs = torch.cat(all_inputs, dim=0)
+            all_labels = torch.cat(all_labels, dim=0)
+
+            # Get embeddings - this is model specific and might need adjustment
+            with torch.no_grad():
+                # For RNN models, we might want to get the hidden state
+                # This is just a placeholder - adapt to your specific model
+                all_inputs = all_inputs.to(device)
+                if hasattr(model, "get_embeddings"):
+                    embeddings = model.get_embeddings(all_inputs)
+                else:
+                    # Try to get the first hidden state as embedding
+                    outputs, hidden = model.rnn(model.one_hot(all_inputs))
+                    embeddings = hidden.cpu().numpy()
+
+            # Create metadata labels
+            metadata = [f"Sample_{i}" for i in range(len(embeddings))]
+
+            # Log the embeddings
+            writer.add_embedding(embeddings, metadata=metadata, global_step=n_epochs)
+
     except Exception as e:
         print(f"Failed to log embeddings to TensorBoard: {e}")
+        print("Continuing without embedding visualization.")
 
 
 class EarlyStopping:
@@ -363,11 +454,11 @@ def training_loop(
     loss_fn,
     train_loader,
     val_loader,
-    epoch_trainer,
     device,
     class_names,
     model_name="model",
     early_stopping_params=None,
+    clipping=None,
 ):
     """Main training loop with TensorBoard logging and early stopping.
 
@@ -440,8 +531,8 @@ def training_loop(
 
         for epoch in range(1, n_epochs + 1):
             # Train for one epoch
-            train_metrics = epoch_trainer(
-                model, train_loader, optimizer, loss_fn, device
+            train_metrics = train_epoch(
+                model, train_loader, optimizer, loss_fn, device, clipping
             )
 
             # Evaluate the model
